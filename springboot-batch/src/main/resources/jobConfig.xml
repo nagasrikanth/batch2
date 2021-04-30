@@ -1,0 +1,42 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch
+      http://www.springframework.org/schema/batch/spring-batch-2.2.xsd
+      http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+	<import resource="context.xml" />
+	<bean id="entity" class="RequestPayloadData" scope="prototype" />
+	<bean id="itemProcessor" class="com.spring.batch.dto.CustomItemProcessor" />
+
+	<bean id="mysqlItemReader"
+		class="org.springframework.batch.item.database.JdbcCursorItemReader">
+		<property name="dataSource" ref="dataSource" />
+		<property name="sql"
+			value="SELECT * FROM ROCM_DIGITAL_OPPTY rd LEFT JOIN  ROCM_DIGITAL_OPPTY_ADDL_DTL ad ON rd.OPPTY_ID = ad.OPPTY_ID" />
+		<property name="rowMapper">
+		<bean class="com.spring.batch.dto.RequestPayloadDataMapper" />
+		</property>
+	</bean>
+
+	<bean id="flatFileItemWriter" class=" org.springframework.batch.item.file.FlatFileItemWriter">
+		<property name="resource" value="file:target/outputfiles/oppty.txt" />
+		<property name="lineAggregator">
+			<bean
+				class=" org.springframework.batch.item.file.transform.PassThroughLineAggregator" />
+		</property>
+	</bean>
+
+	<batch:job id="helloWorldJob">
+		<batch:step id="step1">
+			<batch:tasklet>
+				<batch:chunk reader="mysqlItemReader" writer="flatFileItemWriter"
+					processor="itemProcessor" commit-interval="10">
+				</batch:chunk>
+			</batch:tasklet>
+		</batch:step>
+
+	</batch:job>
+
+</beans>
